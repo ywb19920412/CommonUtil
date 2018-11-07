@@ -1,0 +1,398 @@
+package com.strongit.android.base.util;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.text.DecimalFormat;
+
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Environment;
+import android.os.StatFs;
+import android.widget.Toast;
+
+import com.strongit.android.phone.oa.daiban.activity.DaiBanDetailActivity;
+import com.strongit.android.phone.oa.email.util.DownloadEmailAttachPopWindow;
+import com.strongit.android.phone.oa.login.model.User;
+import com.strongit.android.view.dialog.TipOptionDialog;
+import com.strongit.android.view.dialog.TipOptionDialog.OnTipDialogConfirmListener;
+import com.strongit.phone.oa.R;
+
+public class FileUtil {
+	
+	public static boolean checkEndsWithInStringArray(String checkItsEnd,
+			String[] fileEndings) {
+		for (String aEnd : fileEndings) {
+			if (checkItsEnd.equalsIgnoreCase(aEnd))
+				return true;
+		}
+		return false;
+	}
+
+	
+	/**
+	 * 文件大小单位换算
+	 * 
+	 * @author: yangwb
+	 * @date: 创建时间:2016-11-3 上午11:17:40
+	 * @parameter:
+	 * @return:
+	 */
+	public static String getFileSize(long filesize) {
+		DecimalFormat df = new DecimalFormat("#.00");
+		StringBuffer buffer = new StringBuffer();
+		if (filesize < 1024) {
+			buffer.append(filesize).append("B");
+		} else if (filesize < 1024 * 1024) {
+			buffer.append(df.format((double) filesize / 1024)).append("K");
+		} else if (filesize < 1024 * 1024 * 1024) {
+			buffer.append(df.format((double) filesize / 1024 / 1024)).append(
+					"M");
+		} else {
+			buffer.append(df.format((double) filesize / 1024 / 1024 / 1024))
+					.append("G");
+		}
+		return buffer.toString();
+	}
+
+	/**
+	 * 删除下载的附件
+	 * 
+	 * @author: yangwb
+	 * @date: 创建时间:2016-11-3 下午2:24:40
+	 * @parameter:
+	 * @return:
+	 */
+	public void deleteFile(File file) {
+		if (file.exists()){
+			if(file.isDirectory()) {
+				File[] files = file.listFiles();
+				if (files != null) {
+					if (files.length == 0) {
+						file.delete();
+					} else {
+						for (int i = 0; i < files.length; i++) {
+							if (files[i].isDirectory()) {
+								deleteFile(files[i]);
+							}
+							files[i].delete();
+						}
+					}
+				}
+			}else{
+				file.delete();
+			}
+		}
+	}
+
+	/**
+	 * 判断有无SD卡
+	 * 
+	 * @author: yangwb
+	 * @date: 创建时间:2016-11-3 下午5:11:20
+	 * @parameter:
+	 * @return:
+	 */
+	public static boolean isSDExist() {
+		if (Environment.MEDIA_MOUNTED.equals(Environment
+				.getExternalStorageState())) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * 获取附件缓存的路径
+	 * 
+	 * @author: yangwb
+	 * @date: 创建时间:2016-11-4 上午8:57:30
+	 * @parameter:
+	 * @return:
+	 */
+	public static String getAttachPath() {
+//		String path = "";
+//		if (isSDExist()) {
+//			String sdDir = Environment.getExternalStorageDirectory().getPath();
+//			path = sdDir + "/" + "strongit_OA/attachs/";
+//		}
+		return getPath()+"attachs/";
+	}
+
+	/**
+	 * 获取正文缓存的路径
+	 * 
+	 * @author: yangwb
+	 * @date: 创建时间:2016-11-4 上午8:57:30
+	 * @parameter:
+	 * @return:
+	 */
+	public static String getZhengWenPath() {
+//		String path = "";
+//		if (isSDExist()) {
+//			String sdDir = Environment.getExternalStorageDirectory().getPath();
+//			path = sdDir + "/" + "strongit_OA/zhengwens/";
+//		}
+		return getPath()+"zhengwens/";
+	}
+	/**
+	 * 获取网盘缓存的根路径
+	 * 
+	 * @author: yangwb
+	 * @date: 创建时间:2016-11-4 上午8:57:30
+	 * @parameter:
+	 * @return:
+	 */
+	public static String getPanPath() {
+		String path = "";
+		if (isSDExist()) {
+			String sdDir = Environment.getExternalStorageDirectory().getPath();
+			path = sdDir + "/" + "strongit_OA/pan/";
+		}
+		return path;
+	}
+	/**
+	 * 获取根路径
+	 * 
+	 * @author: yangwb
+	 * @date: 创建时间:2016-11-4 上午8:57:30
+	 * @parameter:
+	 * @return:
+	 */
+	public static String getPath() {
+		String path = "";
+		if (isSDExist()) {
+			String sdDir = Environment.getExternalStorageDirectory().getPath();
+			path = sdDir + "/" + "strongit_OA/cache/";
+		}
+		return path;
+	}
+
+	/**
+	 * 获取根路径
+	 *
+	 * @author: yangwb
+	 * @date: 创建时间:2016-11-4 上午8:57:30
+	 * @parameter:
+	 * @return:
+	 */
+	public static String getBigantPath() {
+		String path = "";
+		if (isSDExist()) {
+			String sdDir = Environment.getExternalStorageDirectory().getPath();
+			path = sdDir + "/" + "Strongit/";
+		}
+		return path;
+	}
+
+	/**
+	 * 设备内置存储卡全部空闲大小 单位B
+	 * 
+	 * @author: yangwb
+	 * @date: 创建时间:2016-11-4 上午11:22:25
+	 * @parameter:
+	 * @return:
+	 */
+	@SuppressLint("NewApi")
+	public static long getPhoneSelSDCardFreeSize() {
+		if (!isSDExist()) {
+			return 0;
+		}
+		File path = Environment.getExternalStorageDirectory();
+		StatFs stat = new StatFs(path.getPath());
+		return stat.getAvailableBytes();
+	}
+	
+	/**
+	 * SD卡中是否存在文件
+	 * 
+	 * @author yangwb
+	 * @date 2016年9月29日09:43:41
+	 * @param filePath
+	 * @return
+	 */
+	public static boolean isFileInSD(String filePath) {
+		File file = new File(filePath);
+		return file.exists();
+	}
+	
+	/**
+	 * 清除已存在的文件
+	 * 
+	 * @author pengch
+	 * @date 2016-11-29 上午10:06:16
+	 * @param
+	 * @return void
+	 * @param fileAttachPath
+	 */
+	public static void clearFile(String fileAttachPath) {
+		if (fileAttachPath == null || "".equals(fileAttachPath)) {
+			return;
+		}
+		File file = new File(fileAttachPath);
+		if (file.exists()) {
+			file.delete();
+		}
+	}
+	
+	/**
+	 * 附件的点击下载
+	 * @author yangwb
+	 * @date 2017-3-21 下午3:30:35
+	 * @param attachs
+	 * @param context
+	 * @param rootPath 附件存储的根路径
+	 * @param user
+	 * @param isWifi
+	 */
+	public static void attachClick(String[] attachs,final Context context,final String rootPath,final User user,boolean isWifi){
+		FileUtilOpen fileUtilOpen=new FileUtilOpen(context);
+		final String attchId=attachs[0];
+		final String attachName=attachs[1];
+		final long attachSize=Long.parseLong(attachs[2]);
+//		String filetype = attachName.substring(attachName.lastIndexOf("."),
+//				attachName.length());
+//		// 支持的类型
+//		String supportType = ".txt.doc.docx.xls.xlsx.ppt.pptx.png.jpg.pdf";// 支持的文件类型
+//		if (supportType.indexOf(filetype.toLowerCase()) == -1) {
+//			Toast.makeText(context, "该格式文件移动端不支持,请尝试电脑端打开!",
+//					Toast.LENGTH_LONG).show();
+//			return;
+//		}
+		if (FileUtil.isSDExist()) {
+			String attachPath = rootPath + attachName;
+			if (DaiBanDetailActivity.isFileAttachInSD(attachPath)) {
+				try {
+					Intent intent = fileUtilOpen.openFile(attachPath);
+					context.startActivity(intent);
+				} catch (Exception e) {
+					Toast.makeText(context, "当前文件类型不可打开，请下载相关软件！",
+							Toast.LENGTH_LONG).show();
+				}
+			} else {
+				if (FileUtil.getPhoneSelSDCardFreeSize() < attachSize) {
+					Toast.makeText(context, "存储空间不足！",
+							Toast.LENGTH_LONG).show();
+					return;
+				}
+				if (!isWifi && attachSize > 6 * 1024 * 1024) {
+					TipOptionDialog optionDialog = new TipOptionDialog(
+							context, R.style.DialogSelf);
+					optionDialog.setDialogTitle("提示信息");
+					optionDialog.setDialogInfo("当前附件过大，查看将耗费较多流量，确定是否继续打开？");
+					optionDialog.setConfirmOnClick(new OnTipDialogConfirmListener() {
+						@Override
+						public void ConfirmOnClick() {
+							Intent intent = new Intent();
+							intent.putExtra("user", user);
+							intent.putExtra("cid", attchId);
+							intent.putExtra("fileName", attachName);
+							intent.putExtra("filePath", rootPath);
+							intent.putExtra("fileSize", attachSize);
+							intent.setClass(context,DownloadEmailAttachPopWindow.class);
+							context.startActivity(intent);
+						}
+					});
+					optionDialog.show();
+				} else {
+					Intent intent = new Intent();
+					intent.putExtra("user", user);
+					intent.putExtra("cid", attchId);
+					intent.putExtra("fileName", attachName);
+					intent.putExtra("filePath", rootPath);
+					intent.putExtra("fileSize", attachSize);
+					intent.setClass(context,DownloadEmailAttachPopWindow.class);
+					context.startActivity(intent);
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Java文件操作 获取文件扩展名
+	 */
+	public static String getExtensionName(String filename) {
+		if ((filename != null) && (filename.length() > 0)) {
+			int dot = filename.lastIndexOf('.');
+			if ((dot > -1) && (dot < (filename.length() - 1))) {
+				return filename.substring(dot + 1);
+			}
+		}
+		return "";
+	}
+	
+	/**
+	 * Java文件操作 获取不带扩展名的文件名
+	 */
+	public static String getFileNameNoEx(String filename) {
+		if ((filename != null) && (filename.length() > 0)) {
+			int dot = filename.lastIndexOf('.');
+			if ((dot > -1) && (dot < (filename.length()))) {
+				return filename.substring(0, dot);
+			}
+		}
+		return filename;
+	}
+	/**
+	  * 获取单个文件的MD5值
+	  * @author yangwb
+	  * @param file
+	  * @return
+	  */
+	public static String getFileMD5(File file) {
+		if (!file.isFile()) {
+			return null;
+		}
+		MessageDigest digest = null;
+		FileInputStream in = null;
+		byte buffer[] = new byte[1024];
+		int len;
+		try {
+			digest = MessageDigest.getInstance("MD5");
+			in = new FileInputStream(file);
+			while ((len = in.read(buffer, 0, 1024)) != -1) {
+				digest.update(buffer, 0, len);
+			}
+			in.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		BigInteger bigInt = new BigInteger(1, digest.digest());
+		return bigInt.toString(16);
+	}
+	/**
+	 * 复制单个文件
+	 * @param oldPath String 原文件路径 如：c:/fqf.txt
+	 * @param newPath String 复制后路径 如：f:/fqf.txt
+	 * @return boolean
+	 */
+	public static String copyFile(String oldPath, String newPath) {
+		try {
+			int bytesum = 0;
+			int byteread = 0;
+			File oldfile = new File(oldPath);
+			if (oldfile.exists()) { //文件存在时
+				InputStream inStream = new FileInputStream(oldPath); //读入原文件
+				FileOutputStream fs = new FileOutputStream(newPath);
+				byte[] buffer = new byte[1024];
+				while ( (byteread = inStream.read(buffer)) != -1) {
+					bytesum += byteread; //字节数 文件大小
+					fs.write(buffer, 0, byteread);
+				}
+				fs.flush();
+				fs.close();
+				inStream.close();
+			}
+		}
+		catch (Exception e) {
+			System.out.println("复制单个文件操作出错");
+			e.printStackTrace();
+		}
+		return newPath;
+	}
+}
